@@ -11,8 +11,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
 });
 
-function compose_email() {
-
+function compose_email(singleView) {
+  const details = document.querySelector('#single-view');
+  if (details) {
+    details.remove()
+  }
   // Show compose view and hide other views
   document.querySelector('#emails-view').style.display = 'none';
   document.querySelector('#compose-view').style.display = 'block';
@@ -21,10 +24,6 @@ function compose_email() {
   document.querySelector('#compose-recipients').value = '';
   document.querySelector('#compose-subject').value = '';
   document.querySelector('#compose-body').value = '';
-}
-
-function reply_email(id){
-  console.log(`${id} is listening `)
 }
 
 function view_email(id) {
@@ -77,9 +76,21 @@ function view_email(id) {
       reply.classList.add('btn', 'btn-primary','mr-3')
       reply.innerHTML = 'Reply'
       view.appendChild(reply)
-      reply.addEventListener('click', () => reply_email(email.id));
+      reply.addEventListener('click', function(){
+        compose_email(view)
+
+        document.querySelector('#compose-recipients').value = `${email.sender}`;
+        let subject = email.subject
+        if (subject.split(" ", 1)[0] != "Re: "){
+          subject = "Re: " + email.subject
+        }
+        document.querySelector('#compose-subject').value = `${email.subject}`;
+        document.querySelector('#compose-body').value = `On ${email.timestamp} ${email.sender} wrote ... ${email.body}`;
+
+      });
 
       archive = document.createElement('button')
+      archive.innerHTML = email.archived ? "Unarchive" : "Archive";
       archive.classList.add('btn', 'btn-secondary')
       view.appendChild(archive)
       archive.addEventListener('click', function() {
@@ -89,11 +100,13 @@ function view_email(id) {
             archived: !email.archived
           })
         })
-        .then(response => response.json())  // Wait for the response from the server
-        .then(email => {
-          // Update the button label based on the updated email's archived status
+        .then(() => {
+          const singleView = document.querySelector('#single-view');
+          if (singleView) {
+            singleView.style.display = 'none';
+          }
 
-          document.querySelector('.btn-secondary').innerHTML = email.archived ? "Unarchive" : "Archive";
+          load_mailbox('inbox');
         });
       });
       
@@ -115,7 +128,7 @@ function load_mailbox(mailbox) {
   document.querySelector('#compose-view').style.display = 'none';
   const singleView = document.querySelector('#single-view');
   if (singleView) {
-    singleView.style.display = 'none';
+    singleView.remove()
   }
   // Show the mailbox name
   document.querySelector('#emails-view').innerHTML = `<h3>${mailbox.charAt(0).toUpperCase() + mailbox.slice(1)}</h3>`;
@@ -125,6 +138,10 @@ function load_mailbox(mailbox) {
   .then(emails => {
       // Print emails
       console.log(emails);
+      const singleView = document.querySelector('#single-view');
+      if (singleView) {
+        singleView.style.display = 'none';
+      }
     all_emails=document.createElement('div')
     all_emails.classList.add('list-group')
     document.querySelector('#emails-view').appendChild(all_emails)
