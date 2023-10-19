@@ -23,15 +23,6 @@ function compose_email() {
   document.querySelector('#compose-body').value = '';
 }
 
-function archive_email(id){
-  fetch(`/emails/${id}`, {
-    method: 'PUT',
-    body: JSON.stringify({
-        archived: true
-    })
-  })
-}
-
 function reply_email(id){
   console.log(`${id} is listening `)
 }
@@ -90,10 +81,22 @@ function view_email(id) {
 
       archive = document.createElement('button')
       archive.classList.add('btn', 'btn-secondary')
-      archive.innerHTML = 'Archive'
       view.appendChild(archive)
-      archive.addEventListener('click', () => archive_email(email.id));
+      archive.addEventListener('click', function() {
+        fetch(`/emails/${email.id}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            archived: !email.archived
+          })
+        })
+        .then(response => response.json())  // Wait for the response from the server
+        .then(email => {
+          // Update the button label based on the updated email's archived status
 
+          document.querySelector('.btn-secondary').innerHTML = email.archived ? "Unarchive" : "Archive";
+        });
+      });
+      
   });
 
   fetch(`/emails/${id}`, {
